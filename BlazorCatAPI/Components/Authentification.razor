@@ -1,0 +1,104 @@
+﻿@using FluentValidation
+@inject NavigationManager NavigationManager
+@inject LoginService LoginService
+
+<MudCard Style="width: 40%">
+    <MudForm Model="@model" @ref="@form" Validation="@(orderValidator.ValidateValue)" ValidationDelay="0">
+        <MudCardContent>
+            <MudTextField @bind-Value="model.Email"
+                          For="@(() => model.Email)"
+                          Immediate="true"
+                          Label="Email" />
+
+            <MudTextField @bind-Value="model.Password"
+                          For="@(() => model.Password)"
+                          Immediate="true"
+                          Label="Password" />
+        </MudCardContent>
+    </MudForm>
+    <MudCardActions>
+        @if (!isRegister)
+        {
+            <MudButton Color="Color.Secondary" Size="Size.Small" OnClick="@(() => NavigationManager.NavigateTo("/register"))">Not registered ?</MudButton>
+        }
+        <MudButton Color="Color.Secondary" Size="Size.Small" OnClick="@(() => NavigationManager.NavigateTo("/signin-google"))">Sign in with Google</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto" OnClick="@(async () => await Submit())">@(isRegister ? "Register" : "Login")</MudButton>
+    </MudCardActions>
+</MudCard>
+
+    @code {
+    [Parameter]
+    public bool isRegister { get; set; }
+
+    MudForm? form;
+
+    UserModelFluentValidator orderValidator;
+
+    UserModel model = new UserModel();
+
+    public Authentification()
+    {
+        orderValidator = new UserModelFluentValidator(isRegister);
+    }
+
+    public class UserModel
+    {
+        public string Email { get; set; } = String.Empty;
+        public string Password { get; set; } = String.Empty;
+    }
+
+    private async Task Submit()
+    {
+        await form.Validate();
+
+        if (form.IsValid)
+        {
+            await Task.Delay(1000);
+            LoginService.isConnected = true;
+            NavigationManager.NavigateTo("/home");
+        }
+    }
+
+    public class UserModelFluentValidator : AbstractValidator<UserModel>
+    {
+        public UserModelFluentValidator(bool isRegister)
+        {
+            if (isRegister)
+            {
+                RuleFor(x => x.Email)
+                    .Cascade(CascadeMode.Stop)
+                    .NotEmpty()
+                    .EmailAddress()
+                    .MustAsync(async (value, cancellationToken) => await IsUniqueAsync(value))
+                    .WithMessage("Email is already in use.");
+
+            }
+            else
+            {
+                RuleFor(x => x.Email)
+                   .Cascade(CascadeMode.Stop)
+                   .NotEmpty()
+                   .EmailAddress();
+            }
+
+            RuleFor(x => x.Password)
+                .NotEmpty()
+                .Length(8, 50);
+        }
+
+        private async Task<bool> IsUniqueAsync(string email)
+        {
+            // TODO : Check in BDD if Exist for Register !!!
+            await Task.Delay(2000);
+            return email.ToLower() != "test@test.com";
+        }
+
+        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
+        {
+            var result = await ValidateAsync(ValidationContext<UserModel>.CreateWithOptions((UserModel)model, x => x.IncludeProperties(propertyName)));
+            if (result.IsValid)
+                return Array.Empty<string>();
+            return result.Errors.Select(e => e.ErrorMessage);
+        };
+    }
+}

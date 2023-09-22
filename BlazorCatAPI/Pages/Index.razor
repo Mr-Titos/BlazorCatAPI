@@ -1,17 +1,10 @@
 ﻿@page "/"
-@inject CatService CatService
-
-<PageTitle>Index</PageTitle>
-
-<MudText Typo="Typo.h3" GutterBottom="true">Hello, world!</MudText>
-<MudText Class="mb-8">Welcome to your new app, powered by MudBlazor!</MudText>
-<MudImage Src="@cat.Url"></MudImage>
+@inject NavigationManager NavigationManager;
 
 @code {
-    private Cat cat = new Cat();
-
-    protected async override Task OnInitializedAsync()
+    // Let this redirect in a case of captcha need or something
+    protected override void OnInitialized()
     {
-        cat = await CatService.GetCatImage();
+        NavigationManager.NavigateTo("/home");
     }
 }

@@ -1,13 +1,10 @@
 using BlazorCatAPI.Services;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Hosting.StaticWebAssets;
 using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
-
-var configuration = new ConfigurationBuilder()
-    .SetBasePath(builder.Environment.ContentRootPath)
-    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-    .Build();
 
 StaticWebAssetsLoader.UseStaticWebAssets(builder.Environment, builder.Configuration);
 
@@ -15,7 +12,29 @@ StaticWebAssetsLoader.UseStaticWebAssets(builder.Environment, builder.Configurat
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddMudServices();
+builder.Services.AddAuthenticationCore();
+builder.Services.AddAuthentication();
+builder.Services.AddScoped<LoginService>();
+builder.Services.AddSingleton<ThemeService>();
 builder.Services.AddSingleton<CatService>();
+
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie();
+builder.Services.AddAuthentication().AddGoogle(options =>
+{
+    var clientId = builder.Configuration["Google:ClientId"];
+    options.ClientId = clientId;
+    options.ClientSecret = builder.Configuration["Google:ClientSecret"];
+    options.ClaimActions.MapJsonKey("urn:google:profile", "link");
+    options.ClaimActions.MapJsonKey("urn:google:image", "picture");
+});
+
+// From https://github.com/aspnet/Blazor/issues/1554
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<HttpContextAccessor>();
+// Required for HttpClient support in the Blazor project
+builder.Services.AddHttpClient();
+builder.Services.AddScoped<HttpClient>();
 
 var app = builder.Build();
 
@@ -32,6 +51,12 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+
+app.UseAuthentication();
+
+app.UseCookiePolicy();
+
+app.UseAuthorization();
 
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");

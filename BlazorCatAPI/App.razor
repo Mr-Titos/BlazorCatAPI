@@ -1,11 +1,29 @@
-﻿<Router AppAssembly="@typeof(App).Assembly">
+﻿@inject NavigationManager NavigationManager
+
+<Router AppAssembly="@typeof(App).Assembly">
     <Found Context="routeData">
-        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+        <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+            <NotAuthorized>
+                <div style="display: flex; justify-content: center;">
+                    <NyanCatSansCat></NyanCatSansCat>
+                </div>
+            </NotAuthorized>
+            <Authorizing>
+                @if (!routeData.PageType.Name.ToLower().Contains("login") && !routeData.PageType.Name.ToLower().Equals("index"))
+                {
+                    <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+                } 
+                else
+                {
+                    <RouteView RouteData="@routeData" DefaultLayout="@typeof(SecondaryLayout)" />
+                }
+            </Authorizing>
+        </AuthorizeRouteView>
     </Found>
     <NotFound>
         <PageTitle>Not found</PageTitle>
-        <LayoutView Layout="@typeof(MainLayout)">
-            <p role="alert">Sorry, there's nothing at this address.</p>
+        <LayoutView Layout="@typeof(SecondaryLayout)">
+            <NyanCatSansCat></NyanCatSansCat>
         </LayoutView>
     </NotFound>
 </Router>

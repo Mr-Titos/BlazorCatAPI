@@ -1,6 +1,7 @@
-﻿@page "/counter"
+﻿@page "/favorites"
+@attribute [Authorize]
 
-<PageTitle>Counter</PageTitle>
+<PageTitle>Favorites</PageTitle>
 
 <MudText Typo="Typo.h3" GutterBottom="true">Counter</MudText>
 <MudText Class="mb-4">Current count: @currentCount</MudText>

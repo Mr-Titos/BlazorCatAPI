@@ -1,0 +1,79 @@
+﻿@using System.Security.Claims
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor _httpContextAccessor
+@inject HttpClient Http
+
+@if (User.Identity.IsAuthenticated)
+{
+    <MudIconButton Icon="@Icons.Material.Filled.Logout" Color="Color.Default" Href="/Identity/Logout"></MudIconButton>
+    <MudText>@GivenName @Surname</MudText>
+    <MudImage Style="padding-left:10px" Src="@Avatar" Height="25"></MudImage>
+}
+else
+{
+    <MudButton Color="Color.Default" Href="/Identity/Login">Login</MudButton>
+}
+
+
+@functions {
+    private ClaimsPrincipal User;
+    private string GivenName;
+    private string Surname;
+    private string Avatar;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        try
+        {
+            // Set the user to determine if they are logged in
+            User = _httpContextAccessor.HttpContext.User;
+
+            // Try to get the GivenName
+            var givenName =
+                _httpContextAccessor.HttpContext.User
+                .FindFirst(ClaimTypes.GivenName);
+
+            if (givenName != null)
+            {
+                GivenName = givenName.Value;
+            }
+            else
+            {
+                GivenName = User.Identity.Name;
+            }
+
+            // Try to get the Surname
+            var surname =
+                _httpContextAccessor.HttpContext.User
+                .FindFirst(ClaimTypes.Surname);
+
+            if (surname != null)
+            {
+                Surname = surname.Value;
+            }
+            else
+            {
+                Surname = "";
+            }
+
+            // Try to get Avatar
+            var avatar =
+            _httpContextAccessor.HttpContext.User
+            .FindFirst("urn:google:image");
+
+            if (avatar != null)
+            {
+                Avatar = avatar.Value;
+            }
+            else
+            {
+                Avatar = "";
+            }
+
+            Thread.CurrentPrincipal = User;
+        }
+        catch { }
+    }
+}

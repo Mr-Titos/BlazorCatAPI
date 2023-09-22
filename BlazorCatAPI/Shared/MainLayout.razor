@@ -1,34 +1,64 @@
-﻿@inherits LayoutComponentBase
+﻿@using System.Security.Claims;
+@inherits LayoutComponentBase
+@inject ThemeService ThemeService
+@inject IHttpContextAccessor _httpContextAccessor
 
-<MudThemeProvider />
+<MudThemeProvider IsDarkModeChanged="@OnThemeChanged" IsDarkMode="isDark" />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-<MudLayout>
-    <MudAppBar Elevation="0">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+<MudLayout Class="fill-height">
+    <MudAppBar Dense=true>
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
         <MudSpacer />
-        <MudIconButton Icon="@Icons.Custom.Brands.MudBlazor" Color="Color.Inherit" Link="https://mudblazor.com/" Target="_blank" />
-        <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" Link="https://github.com/MudBlazor/MudBlazor/" Target="_blank" />
+        <MudToggleIconButton @bind-Toggled=isDark
+                             Icon="@Icons.Material.Filled.LightMode"
+                             ToggledIcon="@Icons.Material.Filled.DarkMode"/>
+        <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" Link="https://github.com/Mr-Titos" Target="_blank" />
+        <LoginControl></LoginControl>
     </MudAppBar>
-    <MudDrawer @bind-Open="_drawerOpen" Elevation="1">
+    <MudDrawer @bind-Open="@_Open">
         <MudDrawerHeader>
-            <MudText Typo="Typo.h6">BlazorCatAPI</MudText>
+            <MudText Typo="Typo.h6">Adopt a Cat</MudText>
         </MudDrawerHeader>
-        <NavMenu />
+        <MudNavMenu>
+            <MudNavLink Match="NavLinkMatch.All" Href="/">Home</MudNavLink>
+            <MudNavLink Match="NavLinkMatch.Prefix" Href="/favorites">Favorites</MudNavLink>
+            <MudNavLink Match="NavLinkMatch.All" Href="/about">About</MudNavLink>
+        </MudNavMenu>
     </MudDrawer>
-    <MudMainContent>
-        <MudContainer MaxWidth="MaxWidth.Large" Class="my-16 pt-16">
-            @Body
-        </MudContainer>
+    <MudMainContent Class="pt-16 px-16 fill-height">
+        @Body
     </MudMainContent>
 </MudLayout>
 
-@code {
-    bool _drawerOpen = true;
+@code{
+    private bool _Open = true;
+    private ClaimsPrincipal user;
+    private bool isDark = false;
 
-    void DrawerToggle()
+    void ToggleDrawer()
     {
-        _drawerOpen = !_drawerOpen;
+        _Open = !_Open;
+    }
+
+
+    protected override void OnInitialized()
+    {
+        user = _httpContextAccessor.HttpContext.User;
+        var idUser = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier);
+        if (user.Identity.IsAuthenticated)
+        {
+            if (!ThemeService.isSessionDarkMode.ContainsKey(idUser.Value))
+                ThemeService.isSessionDarkMode.Add(idUser.Value, false);
+            else
+                isDark = ThemeService.isSessionDarkMode[idUser.Value];
+        }
+    }
+
+    public async Task OnThemeChanged()
+    {
+        var idUser = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier);
+        ThemeService.isSessionDarkMode[idUser.Value] = isDark;
     }
 }
