@@ -15,4 +15,16 @@ public class Cat
 
     [JsonProperty("height")]
     public int Height { get; set; }
+
+    [JsonProperty("breeds")]
+    public List<CatBreed> Breeds { get; set; }
+
+    
+    public override String ToString()
+    {
+        return $"Origin : {Breeds.FirstOrDefault()?.origin}" +
+            $"\nAverage life span : {Breeds.FirstOrDefault()?.life_span}" +
+            $"\nAverage weight : {Breeds.FirstOrDefault()?.weight}" +
+            $"\nTemperament : {Breeds.FirstOrDefault()?.temperament}";
+    }
 }

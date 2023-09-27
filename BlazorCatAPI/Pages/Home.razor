@@ -7,19 +7,14 @@
 
 <PageTitle>Home</PageTitle>
 
-<MudText Typo="Typo.h3" GutterBottom="true">Hello, world!</MudText>
-<MudText Class="mb-8">Welcome to your new app, powered by MudBlazor!</MudText>
-<MudImage Src="@cat?.Url"></MudImage>
+<CatController cat="CatSelected"></CatController>
 
 @code {
-    private Cat? cat = new Cat();
+    private Cat CatSelected { get; set; }
 
     protected override void OnInitialized()
     {
-        
+        CatSelected = Task.Run(() => CatService.GetCatImage()).Result ?? throw new Exception("No cat retrieved");
     }
-    protected async override Task OnInitializedAsync()
-    {
-        cat = await CatService.GetCatImage();
-    }
+
 }

@@ -1,0 +1,54 @@
+﻿@using System.Security.Claims;
+@inject CatService CatService
+@inject IHttpContextAccessor _httpContextAccessor
+
+
+<MudCard Style="width: 40%">
+    <MudCardHeader>
+        <CardHeaderAvatar>
+            <MudAvatar Color="Color.Tertiary">@cat.Breeds.FirstOrDefault()?.name.Substring(0,1)</MudAvatar>
+        </CardHeaderAvatar>
+        <CardHeaderContent>
+            <MudText Typo="Typo.body1">Breed : @cat.Breeds.FirstOrDefault()?.name</MudText>
+        </CardHeaderContent>
+        <CardHeaderActions>
+            <MudToggleIconButton @onclick=OnChangeFavorite Toggled=isFavorite
+                                 Icon="@Icons.Material.Filled.Favorite" Color="Color.Default"
+                                 ToggledIcon="@Icons.Material.Filled.Favorite" ToggledColor="Color.Secondary" />
+        </CardHeaderActions>
+    </MudCardHeader>
+    <MudCardMedia Image="@cat.Url" Height="250" />
+    <MudCardContent>
+        <MudText Typo="Typo.body1">Origin : @cat.Breeds.FirstOrDefault()?.origin</MudText>
+        <MudText Typo="Typo.body1">Average Weight : @cat.Breeds.FirstOrDefault()?.weight.metric kg</MudText>
+        <MudText Typo="Typo.body1">Temperament : @cat.Breeds.FirstOrDefault()?.temperament</MudText>
+        <MudText Typo="Typo.body1">Life span : @cat.Breeds.FirstOrDefault()?.life_span years</MudText>
+
+    </MudCardContent>
+    <MudCardActions>
+        <MudIconButton Icon="@Icons.Material.Filled.Favorite" Color="Color.Default" />
+        <MudSpacer></MudSpacer>
+        <MudIconButton Icon="@Icons.Material.Filled.Share" Color="Color.Default" />
+    </MudCardActions>
+</MudCard>
+
+@code {
+    [Parameter]
+    public Cat cat { get; set; }
+
+    private bool isFavorite = false; // TODO : In Cat model or here => Get in bdd if the cat is a fav
+
+    private async void OnChangeFavorite()
+    {
+        isFavorite = !isFavorite;
+        if (isFavorite)
+        {
+            var user = _httpContextAccessor.HttpContext.User;
+            var idUser = user.Identity.IsAuthenticated ? user.FindFirst(ClaimTypes.NameIdentifier).Value : "";
+            await CatService.FavoriteCat(cat.Id, idUser);
+        } else
+        {
+            Console.WriteLine("ALLHUILE");
+        }
+    }
+} 
