@@ -1,17 +1,22 @@
 ﻿@using System.Security.Claims
 @using Microsoft.AspNetCore.Http
+@using Microsoft.EntityFrameworkCore;
+
+@inject IDbContextFactory<BlazorCatAPIDbContext> ContextFactory
 @inject IHttpContextAccessor _httpContextAccessor
 @inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject UserService UserService
 
 @if (User.Identity.IsAuthenticated)
 {
-    <MudIconButton Icon="@Icons.Material.Filled.Logout" Color="Color.Default" Href="/Identity/Logout"></MudIconButton>
+    <MudIconButton Icon="@Icons.Material.Filled.Logout" Color="Color.Default" Href="/Logout"></MudIconButton>
     <MudText>@GivenName @Surname</MudText>
     <MudImage Style="padding-left:10px" Src="@Avatar" Height="25"></MudImage>
 }
 else
 {
-    <MudButton Color="Color.Default" Href="/Identity/Login">Login</MudButton>
+    <MudButton Color="Color.Default" Href="/login">Login</MudButton>
 }
 
 
@@ -21,16 +26,26 @@ else
     private string Surname;
     private string Avatar;
 
+    private List<User> Users = new List<User>();
+
     protected override void OnInitialized()
     {
         base.OnInitialized();
 
+        /*BlazorCatAPIDbContext context = ContextFactory.CreateDbContext();
+        Users = context.Users.ToList();
+        if (Users.Count > 0)
+        {
+            GivenName = Users.First().GivenName;
+            Surname = Users.First().Surname;
+            Avatar = Users.First().Avatar;
+            return;
+        }*/
+
         try
         {
-            // Set the user to determine if they are logged in
             User = _httpContextAccessor.HttpContext.User;
 
-            // Try to get the GivenName
             var givenName =
                 _httpContextAccessor.HttpContext.User
                 .FindFirst(ClaimTypes.GivenName);
@@ -44,7 +59,6 @@ else
                 GivenName = User.Identity.Name;
             }
 
-            // Try to get the Surname
             var surname =
                 _httpContextAccessor.HttpContext.User
                 .FindFirst(ClaimTypes.Surname);
@@ -58,7 +72,6 @@ else
                 Surname = "";
             }
 
-            // Try to get Avatar
             var avatar =
             _httpContextAccessor.HttpContext.User
             .FindFirst("urn:google:image");

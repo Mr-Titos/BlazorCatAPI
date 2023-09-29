@@ -5,10 +5,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Security.Claims;
 
-namespace BlazorCatAPI.Pages.Identity
+namespace BlazorCatAPI.Pages
 {
     [AllowAnonymous]
-    public class LoginModel : PageModel
+    public class LoginGoogleModel : PageModel
     {
         public IActionResult OnGetAsync(string returnUrl = "")
         {
@@ -16,7 +16,7 @@ namespace BlazorCatAPI.Pages.Identity
             // Request a redirect to the external login provider.
             var authenticationProperties = new AuthenticationProperties
             {
-                RedirectUri = Url.Page("./Login",
+                RedirectUri = Url.Page("./loginGoogle",
                 pageHandler: "Callback",
                 values: new { returnUrl }),
             };
@@ -32,7 +32,7 @@ namespace BlazorCatAPI.Pages.Identity
             {
                 var authProperties = new AuthenticationProperties
                 {
-                    IsPersistent = true,
+                    IsPersistent = false,
                     RedirectUri = Request.Host.Value
                 };
                 await HttpContext.SignInAsync(

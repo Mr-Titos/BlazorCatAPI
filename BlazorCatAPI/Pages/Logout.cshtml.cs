@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace BlazorCatAPI.Pages.Identity
+namespace BlazorCatAPI.Pages
 {
     public class LogoutModel : PageModel
     {

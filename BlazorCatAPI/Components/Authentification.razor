@@ -1,6 +1,6 @@
 ﻿@using FluentValidation
 @inject NavigationManager NavigationManager
-@inject LoginService LoginService
+@inject UserService UserService
 
 <MudCard Style="width: 40%">
     <MudForm Model="@model" @ref="@form" Validation="@(orderValidator.ValidateValue)" ValidationDelay="0">
@@ -21,7 +21,7 @@
         {
             <MudButton Color="Color.Secondary" Size="Size.Small" OnClick="@(() => NavigationManager.NavigateTo("/register"))">Not registered ?</MudButton>
         }
-        <MudButton Color="Color.Secondary" Size="Size.Small" OnClick="@(() => NavigationManager.NavigateTo("/signin-google"))">Sign in with Google</MudButton>
+        <MudButton Color="Color.Secondary" Size="Size.Small" Href="/LoginGoogle">Sign in with Google</MudButton>
         <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto" OnClick="@(async () => await Submit())">@(isRegister ? "Register" : "Login")</MudButton>
     </MudCardActions>
 </MudCard>
@@ -53,8 +53,15 @@
 
         if (form.IsValid)
         {
+            if (isRegister)
+            {
+
+            } else
+            {
+                
+            }
             await Task.Delay(1000);
-            LoginService.isConnected = true;
+            //UserService.isUserConnected;
             NavigationManager.NavigateTo("/home");
         }
     }

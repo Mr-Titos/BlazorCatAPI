@@ -1,7 +1,9 @@
+using BlazorCatAPI.DBLib;
 using BlazorCatAPI.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Hosting.StaticWebAssets;
+using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,9 +16,11 @@ builder.Services.AddServerSideBlazor();
 builder.Services.AddMudServices();
 builder.Services.AddAuthenticationCore();
 builder.Services.AddAuthentication();
-builder.Services.AddScoped<LoginService>();
-builder.Services.AddSingleton<ThemeService>();
+builder.Services.AddSingleton<UserService>(); // Scoped service was still sharing between multiple browsers ?
 builder.Services.AddSingleton<CatService>();
+
+builder.Services.AddDbContextFactory<BlazorCatAPIDbContext>(
+    o => o.UseSqlite("Data Source=BlazorCatAPI.db"));
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie();
 builder.Services.AddAuthentication().AddGoogle(options =>
@@ -44,7 +48,30 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Error");
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
+} else
+{
+    using IServiceScope scope = app.Services.CreateScope();
+
+    var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<BlazorCatAPIDbContext>>();
+
+    using BlazorCatAPIDbContext context = factory.CreateDbContext();
+
+    context.Database.EnsureDeleted();
+    context.Database.EnsureCreated();
+
+    context.Users.Add(new User()
+    {
+        NameIdentifier = "117331122439535472241",
+        GivenName = "Arthur",
+        Surname = "Titos",
+        Avatar = "https://screenshots.codesandbox.io/xtpzc/605.png",
+        IsAuthenticated = false,
+        isDarkMode = true,
+    });
+
+    context.SaveChanges();
 }
+
 
 app.UseHttpsRedirection();
 

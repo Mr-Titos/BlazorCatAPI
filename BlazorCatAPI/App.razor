@@ -9,14 +9,7 @@
                 </div>
             </NotAuthorized>
             <Authorizing>
-                @if (!routeData.PageType.Name.ToLower().Contains("login") && !routeData.PageType.Name.ToLower().Equals("index"))
-                {
                     <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
-                } 
-                else
-                {
-                    <RouteView RouteData="@routeData" DefaultLayout="@typeof(SecondaryLayout)" />
-                }
             </Authorizing>
         </AuthorizeRouteView>
     </Found>

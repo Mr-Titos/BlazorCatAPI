@@ -1,9 +1,12 @@
 ﻿@inherits LayoutComponentBase
 @namespace BlazorCatAPI.Shared
+
 @using Microsoft.AspNetCore.Components.Web
 @using System.Security.Claims;
-@inject ThemeService ThemeService
+
+@inject UserService ThemeService
 @inject IHttpContextAccessor _httpContextAccessor
+@inject UserService UserService
 
 <MudThemeProvider IsDarkModeChanged="@OnThemeChanged" IsDarkMode="isDark" />
 <MudDialogProvider />
@@ -42,19 +45,17 @@
     protected override void OnInitialized()
     {
         user = _httpContextAccessor.HttpContext.User;
-        var idUser = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier);
+        var idUser = user.FindFirst(ClaimTypes.NameIdentifier);
         if (user.Identity.IsAuthenticated)
         {
-            if (!ThemeService.isSessionDarkMode.ContainsKey(idUser.Value))
-                ThemeService.isSessionDarkMode.Add(idUser.Value, false);
-            else
-                isDark = ThemeService.isSessionDarkMode[idUser.Value];
+            isDark = UserService.IsUserDarkMode(idUser.Value);
         }
     }
 
     public async Task OnThemeChanged()
     {
-        var idUser = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier);
-        ThemeService.isSessionDarkMode[idUser.Value] = isDark;
+        var idUser = user.FindFirst(ClaimTypes.NameIdentifier);
+        if (user.Identity.IsAuthenticated)
+            await UserService.SetUserDarkMode(idUser.Value, isDark);
     }
 }
