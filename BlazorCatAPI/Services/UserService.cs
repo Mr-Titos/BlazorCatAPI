@@ -10,10 +10,13 @@ namespace BlazorCatAPI.Services
         private readonly IDbContextFactory<BlazorCatAPIDbContext> ContextFactory;
         BlazorCatAPIDbContext context;
 
+        public static UserService Instance { get; private set; }
+
         public UserService(IDbContextFactory<BlazorCatAPIDbContext> contextFactory)
         {
             ContextFactory = contextFactory;
             context = ContextFactory.CreateDbContext();
+            Instance = this;
         }
 
         public bool IsUserConnected(string userId)
@@ -91,6 +94,47 @@ namespace BlazorCatAPI.Services
             };
             
             return new ClaimsPrincipal(new ClaimsIdentity(claims, "db"));
+        }
+
+        public async Task<List<Favorite>> GetFavorites(string nameIdentifier)
+        {
+            User? user = await context.Users.Where(u => u.NameIdentifier.ToLower().Equals(nameIdentifier.ToLower())).FirstOrDefaultAsync();
+            return user?.Favorites.ToList() ?? new List<Favorite>();
+        }
+
+        public async Task<bool> IsFavorite(string nameIdentifier, string imageId)
+        {
+            User? user = await context.Users.Where(u => u.NameIdentifier.ToLower().Equals(nameIdentifier.ToLower())).FirstOrDefaultAsync();
+            return user?.Favorites.Where(f => f.ImageId.Equals(imageId)).Any() ?? false;
+        }
+
+        public async Task AddFavorite(string userNameIdentifier, string favId, string imageId)
+        {
+            Favorite favorite = new Favorite();
+            favorite.Id = favId;
+            favorite.ImageId = imageId;
+
+            User? user = await context.Users.Where(u => u.NameIdentifier.ToLower().Equals(userNameIdentifier.ToLower())).FirstOrDefaultAsync();
+            if (user != null)
+            {
+                favorite.User = user;
+                user.Favorites.Add(favorite);
+                await context.SaveChangesAsync();
+            }
+        }
+
+        public async Task<string> RemoveFavorite(string userNameIdentifier, string imageId)
+        {
+            User? user = await context.Users.Where(u => u.NameIdentifier.ToLower().Equals(userNameIdentifier.ToLower())).FirstOrDefaultAsync();
+            if (user != null)
+            {
+                Favorite favorite = user.Favorites.Where(f => f.ImageId.Equals(imageId)).FirstOrDefault() ?? throw new Exception("Favorite not found");
+                favorite.User = null;
+                user.Favorites.Remove(favorite);
+                await context.SaveChangesAsync();
+                return favorite.Id;
+            }
+            return "";
         }
     }
 }

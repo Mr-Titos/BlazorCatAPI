@@ -5,14 +5,14 @@
 
 <PageTitle>Home</PageTitle>
 
-<CatController cat="CatSelected"></CatController>
+<CatController Cat="CatSelected"></CatController>
 
 @code {
     private Cat CatSelected { get; set; }
 
     protected override void OnInitialized()
     {
-        CatSelected = Task.Run(() => CatService.GetCatImage()).Result ?? throw new Exception("No cat retrieved");
+        CatSelected = Task.Run(() => CatService.SearchCat()).Result ?? throw new Exception("No cat retrieved");
     }
 
 }

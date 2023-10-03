@@ -1,14 +1,15 @@
 ﻿@using System.Security.Claims;
 @inject CatService CatService
 @inject UserHttpContextService UserHttpContextService
+@inject UserService UserService
 
 <MudCard Style="width: 40%">
     <MudCardHeader>
         <CardHeaderAvatar>
-            <MudAvatar Color="Color.Tertiary">@cat.Breeds.FirstOrDefault()?.name.Substring(0,1)</MudAvatar>
+            <MudAvatar Color="Color.Tertiary">@Cat.Breeds.FirstOrDefault()?.name.Substring(0,1)</MudAvatar>
         </CardHeaderAvatar>
         <CardHeaderContent>
-            <MudText Typo="Typo.body1">Breed : @cat.Breeds.FirstOrDefault()?.name</MudText>
+            <MudText Typo="Typo.body1">Breed : @Cat.Breeds.FirstOrDefault()?.name</MudText>
         </CardHeaderContent>
         <CardHeaderActions>
             <MudToggleIconButton @onclick=OnChangeFavorite Toggled=isFavorite
@@ -16,35 +17,54 @@
                                  ToggledIcon="@Icons.Material.Filled.Favorite" ToggledColor="Color.Secondary" />
         </CardHeaderActions>
     </MudCardHeader>
-    <MudCardMedia Image="@cat.Url" Height="250" />
+    <MudCardMedia Image="@Cat.Url" Height="250" />
     <MudCardContent>
-        <MudText Typo="Typo.body1">Origin : @cat.Breeds.FirstOrDefault()?.origin</MudText>
-        <MudText Typo="Typo.body1">Average Weight : @cat.Breeds.FirstOrDefault()?.weight.metric kg</MudText>
-        <MudText Typo="Typo.body1">Temperament : @cat.Breeds.FirstOrDefault()?.temperament</MudText>
-        <MudText Typo="Typo.body1">Life span : @cat.Breeds.FirstOrDefault()?.life_span years</MudText>
+        <MudText Typo="Typo.body1">Origin : @Cat.Breeds.FirstOrDefault()?.origin</MudText>
+        <MudText Typo="Typo.body1">Average Weight : @Cat.Breeds.FirstOrDefault()?.weight.metric kg</MudText>
+        <MudText Typo="Typo.body1">Temperament : @Cat.Breeds.FirstOrDefault()?.temperament</MudText>
+        <MudText Typo="Typo.body1">Life span : @Cat.Breeds.FirstOrDefault()?.life_span years</MudText>
 
     </MudCardContent>
     <MudCardActions>
-        <MudIconButton Icon="@Icons.Material.Filled.Favorite" Color="Color.Default" />
-        <MudSpacer></MudSpacer>
-        <MudIconButton Icon="@Icons.Material.Filled.Share" Color="Color.Default" />
+        @if (Refresh == null)
+        {
+            <MudSpacer></MudSpacer>
+            <MudIconButton Icon="@Icons.Material.Filled.AddReaction" Color="Color.Default" />
+            <MudIconButton Icon="@Icons.Material.Filled.PersonRemove" Color="Color.Default" />
+        }
     </MudCardActions>
 </MudCard>
 
 @code {
     [Parameter]
-    public Cat cat { get; set; }
+    public Cat Cat { get; set; }
+
+    // If Refresh != null then it's the favorites page that loaded this component !
+    [Parameter]
+    public Action Refresh { get; set; }
+
+    private ClaimsPrincipal user;
+    private string idUser;
 
     private bool isFavorite = false;
 
-    private async void OnChangeFavorite()
+    private async Task OnChangeFavorite()
     {
         isFavorite = !isFavorite;
         if (isFavorite)
-        {
-            var user = UserHttpContextService.GetUser();
-            var idUser = user.Identity.IsAuthenticated ? user.FindFirst(ClaimTypes.NameIdentifier).Value : "";
-            await CatService.FavoriteCat(cat.Id, idUser);
-        }
+            await CatService.FavoriteCat(Cat.Id, idUser);
+        else
+            await CatService.UnFavoriteCat(Cat.Id, idUser);
+
+        if (Refresh != null)
+            Refresh.Invoke();
+    }
+
+    protected async override Task OnInitializedAsync()
+    {
+        base.OnInitialized();
+        user = UserHttpContextService.GetUser();
+        idUser = user.Identity.IsAuthenticated ? user.FindFirst(ClaimTypes.NameIdentifier).Value : "";
+        isFavorite = await UserService.IsFavorite(idUser, Cat.Id);
     }
 } 

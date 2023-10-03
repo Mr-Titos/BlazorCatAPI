@@ -1,18 +1,40 @@
 ﻿@page "/favorites"
+@using System.Security.Claims;
 @attribute [Authorize]
+
+@inject CatService CatService
+@inject UserService UserService
+@inject UserHttpContextService UserHttpContextService
+@inject NavigationManager NavigationManager
 
 <PageTitle>Favorites</PageTitle>
 
-<MudText Typo="Typo.h3" GutterBottom="true">Counter</MudText>
-<MudText Class="mb-4">Current count: @currentCount</MudText>
-<MudButton Color="Color.Primary" Variant="Variant.Filled" @onclick="IncrementCount">Click me</MudButton>
+@foreach (Cat cat in cats)
+{
+    <CatController Cat="cat" Refresh="Refresh"></CatController>
+    <br />
+}
 
 
 @code {
-    private int currentCount = 0;
+    ClaimsPrincipal user;
 
-    private void IncrementCount()
+    List<Cat> cats;
+
+    protected async override Task OnInitializedAsync()
     {
-        currentCount++;
+        cats = new List<Cat>();
+        user = UserHttpContextService.GetUser();
+        List <Favorite> favoritesCat = await UserService.GetFavorites(user.FindFirst(ClaimTypes.NameIdentifier).Value);
+        favoritesCat.ForEach(f => {
+            // Without this hack, the code will turn into an infinite loop
+            Task<Cat> task = Task.Run<Cat>(async () => await CatService.GetCat(f.ImageId));
+            cats.Add(task.Result);
+        });
+    }
+
+    private void Refresh()
+    {
+        NavigationManager.NavigateTo("/favorites", true);
     }
 }
