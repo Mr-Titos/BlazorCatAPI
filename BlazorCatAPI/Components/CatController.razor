@@ -1,7 +1,6 @@
 ﻿@using System.Security.Claims;
 @inject CatService CatService
-@inject IHttpContextAccessor _httpContextAccessor
-
+@inject UserHttpContextService UserHttpContextService
 
 <MudCard Style="width: 40%">
     <MudCardHeader>
@@ -36,19 +35,16 @@
     [Parameter]
     public Cat cat { get; set; }
 
-    private bool isFavorite = false; // TODO : In Cat model or here => Get in bdd if the cat is a fav
+    private bool isFavorite = false;
 
     private async void OnChangeFavorite()
     {
         isFavorite = !isFavorite;
         if (isFavorite)
         {
-            var user = _httpContextAccessor.HttpContext.User;
+            var user = UserHttpContextService.GetUser();
             var idUser = user.Identity.IsAuthenticated ? user.FindFirst(ClaimTypes.NameIdentifier).Value : "";
             await CatService.FavoriteCat(cat.Id, idUser);
-        } else
-        {
-            Console.WriteLine("ALLHUILE");
         }
     }
 } 

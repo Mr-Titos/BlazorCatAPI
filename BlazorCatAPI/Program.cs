@@ -2,9 +2,12 @@ using BlazorCatAPI.DBLib;
 using BlazorCatAPI.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Components.Server.Circuits;
 using Microsoft.AspNetCore.Hosting.StaticWebAssets;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using MudBlazor.Services;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,28 +17,27 @@ StaticWebAssetsLoader.UseStaticWebAssets(builder.Environment, builder.Configurat
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddMudServices();
-builder.Services.AddAuthenticationCore();
-builder.Services.AddAuthentication();
-builder.Services.AddSingleton<UserService>(); // Scoped service was still sharing between multiple browsers ?
+
+builder.Services.AddScoped<UserHttpContextService>();
+builder.Services.TryAddEnumerable(ServiceDescriptor.Scoped<CircuitHandler, UserCircuitHandler>());
+
+builder.Services.AddSingleton<UserService>(); // Scoped service was still sharing between multiple browsers, so instead it will be an authentified Singleton
 builder.Services.AddSingleton<CatService>();
 
-builder.Services.AddDbContextFactory<BlazorCatAPIDbContext>(
-    o => o.UseSqlite("Data Source=BlazorCatAPI.db"));
+builder.Services.AddDbContextFactory<BlazorCatAPIDbContext>(o => o.UseSqlite("Data Source=BlazorCatAPI.db"));
 
+builder.Services.AddAuthenticationCore();
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie();
 builder.Services.AddAuthentication().AddGoogle(options =>
 {
     var clientId = builder.Configuration["Google:ClientId"];
     options.ClientId = clientId;
     options.ClientSecret = builder.Configuration["Google:ClientSecret"];
+    options.ClaimActions.MapJsonKey(ClaimTypes.Email, "email");
     options.ClaimActions.MapJsonKey("urn:google:profile", "link");
     options.ClaimActions.MapJsonKey("urn:google:image", "picture");
 });
 
-// From https://github.com/aspnet/Blazor/issues/1554
-
-builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<HttpContextAccessor>();
 // Required for HttpClient support in the Blazor project
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<HttpClient>();
@@ -64,6 +66,8 @@ if (!app.Environment.IsDevelopment())
         NameIdentifier = "117331122439535472241",
         GivenName = "Arthur",
         Surname = "Titos",
+        Email = "arthur.titos2@gmail.com",
+        Password = "123456789",
         Avatar = "https://screenshots.codesandbox.io/xtpzc/605.png",
         IsAuthenticated = false,
         isDarkMode = true,
@@ -85,6 +89,7 @@ app.UseCookiePolicy();
 
 app.UseAuthorization();
 
+app.UseMiddleware<UserHttpContextServiceDecorator>();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 

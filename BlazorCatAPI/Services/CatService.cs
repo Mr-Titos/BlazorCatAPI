@@ -29,7 +29,7 @@ public class CatService
         };
 
         RestResponse result = await ExecuteRequest(request);
-        // TODO récupérer l'id du Favori + le stocker en BDD.
+        // TODO link with BDD.
         return result.IsSuccessStatusCode;
     }
 

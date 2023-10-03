@@ -2,10 +2,7 @@
 @using Microsoft.AspNetCore.Http
 @using Microsoft.EntityFrameworkCore;
 
-@inject IDbContextFactory<BlazorCatAPIDbContext> ContextFactory
-@inject IHttpContextAccessor _httpContextAccessor
-@inject HttpClient Http
-@inject NavigationManager NavigationManager
+@inject UserHttpContextService UserHttpContextService
 @inject UserService UserService
 
 @if (User.Identity.IsAuthenticated)
@@ -26,66 +23,25 @@ else
     private string Surname;
     private string Avatar;
 
-    private List<User> Users = new List<User>();
-
     protected override void OnInitialized()
     {
         base.OnInitialized();
 
-        /*BlazorCatAPIDbContext context = ContextFactory.CreateDbContext();
-        Users = context.Users.ToList();
-        if (Users.Count > 0)
-        {
-            GivenName = Users.First().GivenName;
-            Surname = Users.First().Surname;
-            Avatar = Users.First().Avatar;
-            return;
-        }*/
-
         try
         {
-            User = _httpContextAccessor.HttpContext.User;
+            User = UserHttpContextService.GetUser();
 
-            var givenName =
-                _httpContextAccessor.HttpContext.User
-                .FindFirst(ClaimTypes.GivenName);
+            Claim? givenName = User.FindFirst(ClaimTypes.GivenName);
 
-            if (givenName != null)
-            {
-                GivenName = givenName.Value;
-            }
-            else
-            {
-                GivenName = User.Identity.Name;
-            }
+            GivenName = givenName != null ? givenName.Value : User.Identity.Name;
 
-            var surname =
-                _httpContextAccessor.HttpContext.User
-                .FindFirst(ClaimTypes.Surname);
+            Claim? surname = User.FindFirst(ClaimTypes.Surname);
 
-            if (surname != null)
-            {
-                Surname = surname.Value;
-            }
-            else
-            {
-                Surname = "";
-            }
+            Surname = surname != null ? surname.Value : "";
 
-            var avatar =
-            _httpContextAccessor.HttpContext.User
-            .FindFirst("urn:google:image");
+            Claim? avatar = User.FindFirst("urn:google:image");
 
-            if (avatar != null)
-            {
-                Avatar = avatar.Value;
-            }
-            else
-            {
-                Avatar = "";
-            }
-
-            Thread.CurrentPrincipal = User;
+            Avatar = avatar != null ? avatar.Value : "";
         }
         catch { }
     }

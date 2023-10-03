@@ -1,7 +1,7 @@
 ﻿@using System.Security.Claims;
 @inherits LayoutComponentBase
 @inject UserService UserService
-@inject IHttpContextAccessor _httpContextAccessor
+@inject UserHttpContextService UserHttpContextService
 
 <MudThemeProvider IsDarkModeChanged="@OnThemeChanged" IsDarkMode="isDark" />
 <MudDialogProvider />
@@ -43,10 +43,10 @@
     }
 
 
-    // TODO : Faire une session temporaire le temps que l'utilisateur se connecte => Permet de mettre le theme Dark sur tout le site sans que ca reset !!
+    // TODO : Temporary UUID generated for the user to permit him to change theme without connection
     protected override void OnInitialized()
     {
-        user = _httpContextAccessor.HttpContext.User;
+        user = UserHttpContextService.GetUser();
         var idUser = user.FindFirst(ClaimTypes.NameIdentifier);
         if (user.Identity.IsAuthenticated)
         {

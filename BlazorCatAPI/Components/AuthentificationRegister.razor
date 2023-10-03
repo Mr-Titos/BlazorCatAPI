@@ -1,19 +1,11 @@
 ﻿@using FluentValidation
-@using Microsoft.AspNetCore.Authentication.Cookies;
 @using Microsoft.EntityFrameworkCore;
 @using System.Security.Claims;
-@using Microsoft.AspNetCore.Http
 
 @inject NavigationManager NavigationManager
-@inject UserHttpContextService UserHttpContextService
-@inject IDbContextFactory<BlazorCatAPIDbContext> ContextFactory
 @inject UserService UserService
 
 <MudCard Style="width: 40%">
-    @if(failedLogin)
-    {
-        <MudText Color="Color.Error">Invalid credentials ! Please check your username and password and try again.</MudText>
-    }
     <MudForm Model="@model" @ref="@form" Validation="@(orderValidator.ValidateValue)" ValidationDelay="0">
         <MudCardContent>
             <MudTextField @bind-Value="model.Email"
@@ -25,17 +17,25 @@
                           For="@(() => model.Password)"
                           Immediate="true"
                           Label="Password" />
+
+                <MudTextField @bind-Value="model.GivenName"
+                              For="@(() => model.GivenName)"
+                              Immediate="true"
+                              Label="Name" />
+
+                <MudTextField @bind-Value="model.SurName"
+                              For="@(() => model.SurName)"
+                              Immediate="true"
+                              Label="Surname" />
         </MudCardContent>
     </MudForm>
     <MudCardActions>
-        <MudButton Color="Color.Secondary" Size="Size.Small" OnClick="@(() => NavigationManager.NavigateTo("/register"))">Not registered ?</MudButton>
         <MudButton Color="Color.Secondary" Size="Size.Small" Href="/LoginGoogle">Sign in with Google</MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto" OnClick="@(async () => await Submit())">Login</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto" OnClick="@(async () => await Submit())">Register</MudButton>
     </MudCardActions>
 </MudCard>
 
 @code {
-    private bool failedLogin = false;
     MudForm? form;
 
     UserModelFluentValidator orderValidator;
@@ -45,14 +45,15 @@
     protected override void OnInitialized()
     {
         base.OnInitialized();
-        orderValidator = new UserModelFluentValidator();
-
+        orderValidator = new UserModelFluentValidator(UserService);
     }
 
     public class UserModel
     {
         public string Email { get; set; } = String.Empty;
         public string Password { get; set; } = String.Empty;
+        public string GivenName { get; set; } = String.Empty;
+        public string SurName { get; set; } = String.Empty;
     }
 
     private async Task Submit()
@@ -61,28 +62,33 @@
 
         if (form.IsValid)
         {
-            BlazorCatAPIDbContext context = ContextFactory.CreateDbContext();
-
-            if (await UserService.AuthUser(model.Email, model.Password))
-            {
-                ClaimsPrincipal userState = await UserService.BuildClaimsPrincipal(model.Email) ?? throw new Exception("Failed to build Http context around the user data");
-                UserHttpContextService.SetUser(userState);
-                // La méthode ci-dessous est ce qui est utilisé avec une page Razor :
-                // await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(User), authProperties);
-                NavigationManager.NavigateTo("/home", true);
-            }
-
+            await UserService.RegisterUser(model.SurName, model.GivenName, model.Email, model.Password);
+            NavigationManager.NavigateTo("/login");
         }
     }
 
     public class UserModelFluentValidator : AbstractValidator<UserModel>
     {
-        public UserModelFluentValidator()
+        private UserService userService;
+
+        public UserModelFluentValidator(UserService us)
         {
+            this.userService = us;
+
             RuleFor(x => x.Email)
-                   .Cascade(CascadeMode.Stop)
-                   .NotEmpty()
-                   .EmailAddress();
+                .Cascade(CascadeMode.Stop)
+                .NotEmpty()
+                .EmailAddress()
+                .MustAsync(async (email, cancellationToken) => await userService.IsEmailUnique(email))
+                .WithMessage("Email is already in use.");
+
+            RuleFor(x => x.GivenName)
+                .NotEmpty()
+                .Length(2, 20);
+
+            RuleFor(x => x.SurName)
+                .NotEmpty()
+                .Length(2, 40);
 
             RuleFor(x => x.Password)
                 .NotEmpty()
@@ -90,7 +96,7 @@
         }
 
         public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
-        {
+    {
             var result = await ValidateAsync(ValidationContext<UserModel>.CreateWithOptions((UserModel)model, x => x.IncludeProperties(propertyName)));
             if (result.IsValid)
                 return Array.Empty<string>();

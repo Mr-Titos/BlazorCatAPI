@@ -5,7 +5,7 @@
 @using System.Security.Claims;
 
 @inject UserService ThemeService
-@inject IHttpContextAccessor _httpContextAccessor
+@inject UserHttpContextService UserHttpContextService
 @inject UserService UserService
 
 <MudThemeProvider IsDarkModeChanged="@OnThemeChanged" IsDarkMode="isDark" />
@@ -44,7 +44,7 @@
 
     protected override void OnInitialized()
     {
-        user = _httpContextAccessor.HttpContext.User;
+        user = UserHttpContextService.GetUser();
         var idUser = user.FindFirst(ClaimTypes.NameIdentifier);
         if (user.Identity.IsAuthenticated)
         {

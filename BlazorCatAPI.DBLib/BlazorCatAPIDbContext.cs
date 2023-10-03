@@ -30,12 +30,18 @@ namespace BlazorCatAPI.DBLib
                 u.HasKey(u => u.NameIdentifier);
 
                 u.Property(u => u.GivenName)
-                    .HasMaxLength(256)
+                    .HasMaxLength(20)
                     .IsUnicode();
 
                 u.Property(u => u.Surname)
-                    .HasMaxLength(256)
+                    .HasMaxLength(40)
                     .IsUnicode();
+
+                u.Property(u => u.Password)
+                    .HasMaxLength(256)
+                    .HasColumnType("text");
+
+                u.HasIndex(u => u.Email).IsUnique(true);
 
                 u.Property(u => u.isDarkMode).HasDefaultValue(false);
 
