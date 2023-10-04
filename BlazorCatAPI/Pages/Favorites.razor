@@ -8,44 +8,26 @@
 @inject NavigationManager NavigationManager
 
 <PageTitle>Favorites</PageTitle>
-@for(int i = 0; i < cats.Count; i++)
-{
-    if ((cats.Count) - i >= 2)
-    {
-        <div style="display: flex; flex-direction: row; gap: 15px">
-            <CatController Cat="cats[i]" Refresh="Refresh"></CatController>
-            <CatController Cat="cats[i + 1]" Refresh="Refresh"></CatController>
-        </div>
-        i++;
-    } 
-    else
-    {
-        <CatController Cat="cats[i]" Refresh="Refresh"></CatController>
-    }
-    <br />
-}
 
+<CatListComponent Cats="cats" RefreshURI="@(NavigationManager.Uri)" Minimized="true" NominalScenario="false"></CatListComponent>
 
 @code {
     ClaimsPrincipal user;
 
     List<Cat> cats;
 
-    protected async override Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         cats = new List<Cat>();
         user = UserHttpContextService.GetUser();
-        List <Favorite> favoritesCat = await UserService.GetFavorites(user.FindFirst(ClaimTypes.NameIdentifier).Value);
+
+        Task<List<Favorite>> task = Task.Run<List<Favorite>>(async () => await UserService.GetFavorites(user.FindFirst(ClaimTypes.NameIdentifier).Value));
+        List<Favorite> favoritesCat = task.Result;
         favoritesCat.ForEach(f => {
             // Without this hack, the code will turn into an infinite loop
             Task<Cat> task = Task.Run<Cat>(async () => await CatService.GetCat(f.ImageId));
             cats.Add(task.Result);
         });
         cats = cats.OrderBy(c => c.Breeds.First().name).ToList();
-    }
-
-    private void Refresh()
-    {
-        NavigationManager.NavigateTo("/favorites", true);
     }
 }

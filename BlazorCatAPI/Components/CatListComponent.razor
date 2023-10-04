@@ -1,0 +1,36 @@
+﻿@inject NavigationManager NavigationManager
+
+
+@for (int i = 0; i < Cats.Count; i++)
+{
+    if ((Cats.Count) - i >= 2)
+    {
+        <div style="display: flex; flex-direction: row; gap: 15px">
+            <CatComponent Cat="Cats[i]" RefreshURI="@RefreshURI" Minimized="Minimized" NominalScenario="NominalScenario" ReadOnly="ReadOnly"></CatComponent>
+            <CatComponent Cat="Cats[i + 1]" RefreshURI="@RefreshURI" Minimized="Minimized" NominalScenario="NominalScenario" ReadOnly="ReadOnly"></CatComponent>
+        </div>
+        i++;
+    }
+    else
+    {
+        <CatComponent Cat="Cats[i]" RefreshURI="@RefreshURI" Minimized="Minimized" NominalScenario="NominalScenario" ReadOnly="ReadOnly"></CatComponent>
+    }
+    <br />
+}
+
+@code {
+    [Parameter] [EditorRequired]
+    public List<Cat> Cats { get; set; }
+
+    [Parameter]
+    public string? RefreshURI { get; set; }
+
+    [Parameter]
+    public bool NominalScenario { get; set; }
+
+    [Parameter]
+    public bool Minimized { get; set; } = false;
+
+    [Parameter]
+    public bool ReadOnly { get; set; } = false;
+}

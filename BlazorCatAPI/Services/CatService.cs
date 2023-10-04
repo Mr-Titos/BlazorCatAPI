@@ -18,12 +18,22 @@ public class CatService
         apiKey = configuration["ApiKey"] ?? throw new Exception("Can't retrieve the API key");
     }
 
-    public async Task<Cat?> SearchCat()
+    // By default that will get one random cat that has a completed breed
+    public async Task<List<Cat>?> SearchCats(Dictionary<string, string> filters = null)
     {
         RestRequest request = new RestRequest("images/search", Method.Get);
         request.AddParameter("has_breeds", "1");
+
+        if (filters != null)
+        {
+            foreach (var filter in filters)
+            {
+                request.AddParameter(filter.Key, filter.Value);
+            }
+        }
+
         RestResponse result = await ExecuteRequest(request);
-        return result.IsSuccessStatusCode ? JsonConvert.DeserializeObject<Cat[]>(result.Content).First() : null;
+        return result.IsSuccessStatusCode ? JsonConvert.DeserializeObject<Cat[]>(result.Content).ToList(): null;
     }
     public async Task<Cat?> GetCat(string imageId)
     {
@@ -44,9 +54,12 @@ public class CatService
         };
         request.AddBody(body, ContentType.Json);
         RestResponse result = await ExecuteRequest(request);
-        FavoriteResponse favoriteResponse = JsonConvert.DeserializeObject<FavoriteResponse>(result.Content) ?? throw new Exception("Error while adding favorite");
+        if (!result.Content.Contains("DUPLICATE_fAVOURITE")) // If the image is already favorited with the userID...
+        {
+            FavoriteResponse favoriteResponse = JsonConvert.DeserializeObject<FavoriteResponse>(result.Content) ?? throw new Exception("Error while adding favorite");
+            await UserService.Instance.AddFavorite(userId, favoriteResponse.Id, imageId);
+        }
 
-        await UserService.Instance.AddFavorite(userId, favoriteResponse.Id, imageId);
         return result.IsSuccessStatusCode;
     }
 
@@ -77,6 +90,13 @@ public class CatService
             f.isLiked = isLiked;
             await UserService.Instance.UpdateFavorite(f);
         }
+    }
+
+    public async Task<List<CatBreed>> GetCatBreeds()
+    {
+        RestRequest request = new RestRequest("breeds", Method.Get);
+        RestResponse result = await ExecuteRequest(request);
+        return result.IsSuccessStatusCode ? JsonConvert.DeserializeObject<CatBreed[]>(result.Content).ToList() : throw new Exception("Can't retrieve breeds infos");
     }
 
 

@@ -1,4 +1,6 @@
 ﻿using Newtonsoft.Json;
+using System.Xml.Linq;
+
 namespace BlazorCatAPI.Modeles;
 public class CatBreed
 {
@@ -23,4 +25,14 @@ public class CatBreed
     [JsonProperty("weight")]
     public CatWeight weight { get; set; }
 
+
+    // Note: this is important so the MudSelect can compare CatBreeds
+    public override bool Equals(object o)
+    {
+        var other = o as CatBreed;
+        return other?.id == id;
+    }
+
+    // Note: this is important too!
+    public override int GetHashCode() => id?.GetHashCode() ?? 0;
 }

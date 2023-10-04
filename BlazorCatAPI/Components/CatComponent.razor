@@ -1,7 +1,9 @@
 ﻿@using System.Security.Claims;
+
 @inject CatService CatService
 @inject UserHttpContextService UserHttpContextService
 @inject UserService UserService
+@inject NavigationManager NavigationManager
 
 <MudCard Style="width: 40%;" >
     <MudCardHeader Style="@Style">
@@ -12,14 +14,17 @@
             <MudText Typo="Typo.body1">@Cat.Breeds.FirstOrDefault()?.name</MudText>
         </CardHeaderContent>
         <CardHeaderActions>
-            <MudToggleIconButton @onclick=OnChangeFavorite Toggled=isFavorite
-                                 Icon="@Icons.Material.Filled.Favorite" Color="Color.Default"
-                                 ToggledIcon="@Icons.Material.Filled.Favorite" ToggledColor="Color.Secondary" />
+            @if (!ReadOnly)
+            {
+                <MudToggleIconButton @onclick=OnChangeFavorite Toggled=isFavorite
+                                     Icon="@Icons.Material.Filled.Favorite" Color="Color.Default"
+                                     ToggledIcon="@Icons.Material.Filled.Favorite" ToggledColor="Color.Secondary" />
+            }
         </CardHeaderActions>
     </MudCardHeader>
     <MudCardMedia Image="@Cat.Url" Height="250" />
     <MudCardContent>
-        @if (Refresh == null)
+        @if (!Minimized)
         {
             <MudText Typo="Typo.body1">Origin : @Cat.Breeds.FirstOrDefault()?.origin</MudText>
             <MudText Typo="Typo.body1">Average Weight : @Cat.Breeds.FirstOrDefault()?.weight.metric kg</MudText>
@@ -28,19 +33,31 @@
         }
     </MudCardContent>
     <MudCardActions>
-        <MudSpacer></MudSpacer>
-        <MudIconButton Icon="@Icons.Material.Filled.ThumbUp" OnClick="@(() => VoteCat(true))" Color="Color.Success" />
-        <MudIconButton Icon="@Icons.Material.Filled.ThumbDown" OnClick="@(() => VoteCat(false))" Color="Color.Error" />
+        @if (!ReadOnly)
+        {
+            <MudSpacer></MudSpacer>
+            <MudIconButton Icon="@Icons.Material.Filled.ThumbUp" OnClick="@(() => VoteCat(true))" Color="Color.Success" />
+            <MudIconButton Icon="@Icons.Material.Filled.ThumbDown" OnClick="@(() => VoteCat(false))" Color="Color.Error" />
+        }
     </MudCardActions>
 </MudCard>
 
 @code {
-    [Parameter]
+    [Parameter] [EditorRequired]
     public Cat Cat { get; set; }
 
-    // If Refresh != null then it's the favorites page that loaded this component !
     [Parameter]
-    public Action Refresh { get; set; }
+    public string? RefreshURI { get; set; }
+
+    [Parameter]
+    public bool NominalScenario { get; set; } = true;
+
+    [Parameter]
+    public bool Minimized { get; set; } = false;
+
+    [Parameter]
+    public bool ReadOnly { get; set; } = false;
+
 
     private ClaimsPrincipal? user;
     private string? idUser;
@@ -60,8 +77,8 @@
             else
                 await CatService.UnFavoriteCat(Cat.Id, idUser);
 
-            if (Refresh != null)
-                Refresh.Invoke();
+            if (!NominalScenario) // Alternantive scenario => After favorite the component reload itself
+                RefreshPage();
         }
     }
 
@@ -86,13 +103,19 @@
     private async Task VoteCat(bool isLiked)
     {
         CatService.VoteCat(Cat.Id, isLiked, idUser);
-        if (Refresh == null) // It's not in favorites !
+        if (NominalScenario) // Nominal scenario => After the voted it change its cat
         {
-            Cat = await CatService.SearchCat() ?? new Cat();
+            Cat = Task.Run<List<Cat>>(async () => await CatService.SearchCats()).Result.First() ?? new Cat();
             isFavorite = false;
-        } else // It's in favorites !
-        {
-            Refresh?.Invoke();
         }
+        else // Alternantive scenario => After the voted the component reload itself
+        {
+            RefreshPage();
+        }
+    }
+
+    private void RefreshPage()
+    {
+        NavigationManager.NavigateTo(RefreshURI != null ? RefreshURI : "/home", true);
     }
 }

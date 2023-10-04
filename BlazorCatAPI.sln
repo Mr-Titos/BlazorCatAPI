@@ -8,7 +8,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazorCatAPI", "BlazorCatAP
 		{2026FC65-B2F1-4E00-BD75-13E60648F2CF} = {2026FC65-B2F1-4E00-BD75-13E60648F2CF}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorCatAPI.DBLib", "BlazorCatAPI.DBLib\BlazorCatAPI.DBLib.csproj", "{2026FC65-B2F1-4E00-BD75-13E60648F2CF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazorCatAPI.DBLib", "BlazorCatAPI.DBLib\BlazorCatAPI.DBLib.csproj", "{2026FC65-B2F1-4E00-BD75-13E60648F2CF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

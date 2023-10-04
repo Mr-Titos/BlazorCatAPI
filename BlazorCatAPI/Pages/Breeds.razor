@@ -1,0 +1,48 @@
+﻿@page "/breeds"
+@using System.Security.Claims;
+
+@inject CatService CatService
+@inject UserService UserService
+@inject UserHttpContextService UserHttpContextService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Breeds</PageTitle>
+
+<div style="width: 30%">
+    <MudSelect @bind-Value="selectedBreed" SelectedValuesChanged="LoadCatsByBreed" T="CatBreed" Label="Breed" Variant="Variant.Filled" AnchorOrigin="Origin.BottomCenter" AdornmentIcon="@Icons.Material.Filled.Search">
+        @foreach(CatBreed breed in breeds)
+        {
+            <MudSelectItem Value="breed">@breed.name</MudSelectItem>
+        }
+    </MudSelect>
+</div>
+<br />
+
+<CatListComponent Cats="cats" ReadOnly="true"></CatListComponent>
+
+@code {
+    ClaimsPrincipal user;
+
+    List<Cat> cats;
+
+    List<CatBreed> breeds;
+
+    CatBreed selectedBreed;
+
+    protected override void OnInitialized()
+    {
+        cats = new List<Cat>();
+        Task<List<CatBreed>> task = Task.Run<List<CatBreed>>(async () => await CatService.GetCatBreeds());
+        breeds = task.Result;
+    }
+
+    private void LoadCatsByBreed()
+    {
+        cats.Clear();
+        Dictionary<string, string> filters = new Dictionary<string, string>();
+        filters.Add("breed_ids", selectedBreed.id);
+        filters.Add("limit", "4");
+        cats.AddRange(Task.Run<List<Cat>>(async () => await CatService.SearchCats(filters)).Result ?? new List<Cat>());
+        StateHasChanged();
+    }
+}
