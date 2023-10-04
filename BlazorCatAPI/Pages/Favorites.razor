@@ -41,6 +41,7 @@
             Task<Cat> task = Task.Run<Cat>(async () => await CatService.GetCat(f.ImageId));
             cats.Add(task.Result);
         });
+        cats = cats.OrderBy(c => c.Breeds.First().name).ToList();
     }
 
     private void Refresh()
