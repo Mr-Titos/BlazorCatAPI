@@ -1,4 +1,5 @@
-﻿using BlazorCatAPI.Modeles;
+﻿using BlazorCatAPI.DBLib;
+using BlazorCatAPI.Modeles;
 using Newtonsoft.Json;
 using RestSharp;
 using System;
@@ -35,6 +36,7 @@ public class CatService
     {
         // Add a request to the Cat API because of the in built system of favorite of the API
         // Not useful here because of the need of implementation of the EntityFramework !!
+        // TODO : Add a config to be able to switch with the Cat API model and then be able to save favorites in the cloud
         RestRequest request = new RestRequest("favourites", Method.Post);
         Dictionary<string, string> body = new Dictionary<string, string>
         {
@@ -58,6 +60,25 @@ public class CatService
 
         return result.IsSuccessStatusCode;
     }
+
+    public async Task VoteCat(string imageId, bool isLiked, string userId = "")
+    {
+        RestRequest request = new RestRequest("votes", Method.Post);
+        Dictionary<string, object> body = new Dictionary<string, object>
+        {
+            {"image_id", imageId}, {"sub_id", userId}, {"value", isLiked ? 1 : -1}
+        };
+        request.AddBody(body, ContentType.Json);
+        RestResponse result = await ExecuteRequest(request);
+
+        Favorite? f = await UserService.Instance.GetFavorite(userId, imageId);
+        if (f != null)
+        {
+            f.isLiked = isLiked;
+            await UserService.Instance.UpdateFavorite(f);
+        }
+    }
+
 
     private async Task<RestResponse> ExecuteRequest(RestRequest req)
     {

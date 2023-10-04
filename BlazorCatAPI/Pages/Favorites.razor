@@ -8,10 +8,20 @@
 @inject NavigationManager NavigationManager
 
 <PageTitle>Favorites</PageTitle>
-
-@foreach (Cat cat in cats)
+@for(int i = 0; i < cats.Count; i++)
 {
-    <CatController Cat="cat" Refresh="Refresh"></CatController>
+    if ((cats.Count) - i >= 2)
+    {
+        <div style="display: flex; flex-direction: row; gap: 15px">
+            <CatController Cat="cats[i]" Refresh="Refresh"></CatController>
+            <CatController Cat="cats[i + 1]" Refresh="Refresh"></CatController>
+        </div>
+        i++;
+    } 
+    else
+    {
+        <CatController Cat="cats[i]" Refresh="Refresh"></CatController>
+    }
     <br />
 }
 

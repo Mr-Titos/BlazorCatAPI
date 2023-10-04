@@ -6,6 +6,7 @@ namespace BlazorCatAPI.DBLib
     {
         public string Id { get; set; }
         public string ImageId { get; set; }
+        public bool? isLiked { get; set; }
         public User User { get; set; } = null!; // Required reference navigation to principal
 
     }

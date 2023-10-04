@@ -3,13 +3,13 @@
 @inject UserHttpContextService UserHttpContextService
 @inject UserService UserService
 
-<MudCard Style="width: 40%">
-    <MudCardHeader>
+<MudCard Style="width: 40%;" >
+    <MudCardHeader Style="@Style">
         <CardHeaderAvatar>
             <MudAvatar Color="Color.Tertiary">@Cat.Breeds.FirstOrDefault()?.name.Substring(0,1)</MudAvatar>
         </CardHeaderAvatar>
         <CardHeaderContent>
-            <MudText Typo="Typo.body1">Breed : @Cat.Breeds.FirstOrDefault()?.name</MudText>
+            <MudText Typo="Typo.body1">@Cat.Breeds.FirstOrDefault()?.name</MudText>
         </CardHeaderContent>
         <CardHeaderActions>
             <MudToggleIconButton @onclick=OnChangeFavorite Toggled=isFavorite
@@ -29,8 +29,8 @@
         @if (Refresh == null)
         {
             <MudSpacer></MudSpacer>
-            <MudIconButton Icon="@Icons.Material.Filled.AddReaction" Color="Color.Default" />
-            <MudIconButton Icon="@Icons.Material.Filled.PersonRemove" Color="Color.Default" />
+            <MudIconButton Icon="@Icons.Material.Filled.ThumbUp" OnClick="@(() => VoteCat(true))" Color="Color.Success" />
+            <MudIconButton Icon="@Icons.Material.Filled.ThumbDown" OnClick="@(() => VoteCat(false))" Color="Color.Error" />
         }
     </MudCardActions>
 </MudCard>
@@ -43,28 +43,51 @@
     [Parameter]
     public Action Refresh { get; set; }
 
-    private ClaimsPrincipal user;
-    private string idUser;
+    private ClaimsPrincipal? user;
+    private string? idUser;
 
     private bool isFavorite = false;
+    private bool? isLiked;
+
+    private string Style = "";
 
     private async Task OnChangeFavorite()
     {
         isFavorite = !isFavorite;
-        if (isFavorite)
-            await CatService.FavoriteCat(Cat.Id, idUser);
-        else
-            await CatService.UnFavoriteCat(Cat.Id, idUser);
+        if (user?.Identity?.IsAuthenticated ?? false)
+        {
+            if (isFavorite)
+                await CatService.FavoriteCat(Cat.Id, idUser);
+            else
+                await CatService.UnFavoriteCat(Cat.Id, idUser);
 
-        if (Refresh != null)
-            Refresh.Invoke();
+            if (Refresh != null)
+                Refresh.Invoke();
+        }
     }
 
     protected async override Task OnInitializedAsync()
     {
         base.OnInitialized();
         user = UserHttpContextService.GetUser();
-        idUser = user.Identity.IsAuthenticated ? user.FindFirst(ClaimTypes.NameIdentifier).Value : "";
-        isFavorite = await UserService.IsFavorite(idUser, Cat.Id);
+        if (user?.Identity?.IsAuthenticated ?? false)
+        {
+            idUser = user.Identity.IsAuthenticated ? user.FindFirst(ClaimTypes.NameIdentifier).Value : "";
+            Favorite? f = await UserService.GetFavorite(idUser, Cat.Id);
+            isFavorite = f != null;
+            isLiked = f?.isLiked;
+            Style = "background-color: ";
+            // If isLike is null -> color by theme default
+            // If isLike is true -> color semi-transparent green
+            // If isLike is false -> color semi-transparent red
+            Style += isLiked.HasValue ? isLiked.Value ? "rgba(0, 255, 0, 0.5)" : "rgba(255, 0, 0, 0.5)" : Color.Default;
+        }
     }
-} 
+
+    private async Task VoteCat(bool isLiked)
+    {
+        CatService.VoteCat(Cat.Id, isLiked, idUser);
+        Cat = await CatService.SearchCat() ?? new Cat();
+        isFavorite = false;
+    }
+}

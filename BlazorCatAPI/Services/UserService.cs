@@ -98,14 +98,27 @@ namespace BlazorCatAPI.Services
 
         public async Task<List<Favorite>> GetFavorites(string nameIdentifier)
         {
-            User? user = await context.Users.Where(u => u.NameIdentifier.ToLower().Equals(nameIdentifier.ToLower())).FirstOrDefaultAsync();
+            User? user = await context.Users.Where(u => u.NameIdentifier.Equals(nameIdentifier)).FirstOrDefaultAsync();
             return user?.Favorites.ToList() ?? new List<Favorite>();
         }
 
-        public async Task<bool> IsFavorite(string nameIdentifier, string imageId)
+        public async Task<Favorite?> GetFavorite(string nameIdentifier, string imageId)
         {
-            User? user = await context.Users.Where(u => u.NameIdentifier.ToLower().Equals(nameIdentifier.ToLower())).FirstOrDefaultAsync();
-            return user?.Favorites.Where(f => f.ImageId.Equals(imageId)).Any() ?? false;
+            return this.GetFavorites(nameIdentifier)?.Result.Where(f => f.ImageId.Equals(imageId)).FirstOrDefault();
+        }
+
+        public async Task<bool> UpdateFavorite(Favorite f)
+        {
+            try
+            {
+                context.Update(f);
+                await context.SaveChangesAsync();
+                return true;
+            } 
+            catch (Exception)
+            {
+                return false;
+            }
         }
 
         public async Task AddFavorite(string userNameIdentifier, string favId, string imageId)
