@@ -54,10 +54,10 @@ public class CatService
         };
         request.AddBody(body, ContentType.Json);
         RestResponse result = await ExecuteRequest(request);
-        if (!result.Content.Contains("DUPLICATE_fAVOURITE")) // If the image is already favorited with the userID...
+        if (!result.Content.Contains("DUPLICATE_FAVOURITE")) // If the image is already favorited with the userID in the API DB ...
         {
             FavoriteResponse favoriteResponse = JsonConvert.DeserializeObject<FavoriteResponse>(result.Content) ?? throw new Exception("Error while adding favorite");
-            await UserService.Instance.AddFavorite(userId, favoriteResponse.Id, imageId);
+            await UserService.Instance.AddFavorite(userId, favoriteResponse.id, imageId);
         }
 
         return result.IsSuccessStatusCode;
@@ -74,12 +74,12 @@ public class CatService
         return result.IsSuccessStatusCode;
     }
 
-    public async Task VoteCat(string imageId, bool isLiked, string userId = "")
+    public async Task<bool> VoteCat(string imageId, int isLiked, string userId = "")
     {
         RestRequest request = new RestRequest("votes", Method.Post);
         Dictionary<string, object> body = new Dictionary<string, object>
         {
-            {"image_id", imageId}, {"sub_id", userId}, {"value", isLiked ? 1 : -1}
+            {"image_id", imageId}, {"sub_id", userId}, {"value", isLiked}
         };
         request.AddBody(body, ContentType.Json);
         RestResponse result = await ExecuteRequest(request);
@@ -90,6 +90,7 @@ public class CatService
             f.isLiked = isLiked;
             await UserService.Instance.UpdateFavorite(f);
         }
+        return result.IsSuccessStatusCode;
     }
 
     public async Task<List<CatBreed>> GetCatBreeds()
@@ -97,6 +98,29 @@ public class CatService
         RestRequest request = new RestRequest("breeds", Method.Get);
         RestResponse result = await ExecuteRequest(request);
         return result.IsSuccessStatusCode ? JsonConvert.DeserializeObject<CatBreed[]>(result.Content).ToList() : throw new Exception("Can't retrieve breeds infos");
+    }
+
+    public async Task<List<Cat>> GetHistoric(string userId)
+    {
+        RestRequest request = new RestRequest("votes", Method.Get);
+        request.AddParameter("sub_id", userId);
+        request.AddParameter("order", "DESC");
+        request.AddParameter("limit", "10");
+
+        RestResponse result = await ExecuteRequest(request);
+        List<Cat> historic = new List<Cat>();
+        List<VoteResponse> votes = result.IsSuccessStatusCode ? JsonConvert.DeserializeObject<VoteResponse[]>(result.Content).ToList() : throw new Exception("Can't retrieve historic");
+
+        foreach (VoteResponse vote in votes)
+        {
+            Cat? cat = await GetCat(vote.catId);
+            if (cat != null)
+            {
+                cat.isLiked = vote.value;
+                historic.Add(cat);
+            }    
+        }
+        return historic;
     }
 
 

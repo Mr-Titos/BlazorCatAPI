@@ -19,6 +19,8 @@ public class Cat
     [JsonProperty("breeds")]
     public List<CatBreed> Breeds { get; set; }
 
+    public int isLiked { get; set; } = 0;
+
     
     public override String ToString()
     {

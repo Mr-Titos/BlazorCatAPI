@@ -36,8 +36,8 @@
         @if (!ReadOnly)
         {
             <MudSpacer></MudSpacer>
-            <MudIconButton Icon="@Icons.Material.Filled.ThumbUp" OnClick="@(() => VoteCat(true))" Color="Color.Success" />
-            <MudIconButton Icon="@Icons.Material.Filled.ThumbDown" OnClick="@(() => VoteCat(false))" Color="Color.Error" />
+            <MudIconButton Icon="@Icons.Material.Filled.ThumbUp" OnClick="@(() => VoteCat(1))" Color="Color.Success" />
+            <MudIconButton Icon="@Icons.Material.Filled.ThumbDown" OnClick="@(() => VoteCat(-1))" Color="Color.Error" />
         }
     </MudCardActions>
 </MudCard>
@@ -58,12 +58,10 @@
     [Parameter]
     public bool ReadOnly { get; set; } = false;
 
-
     private ClaimsPrincipal? user;
     private string? idUser;
 
     private bool isFavorite = false;
-    private bool? isLiked;
 
     private string Style = "";
 
@@ -91,16 +89,20 @@
             idUser = user.Identity.IsAuthenticated ? user.FindFirst(ClaimTypes.NameIdentifier).Value : "";
             Favorite? f = await UserService.GetFavorite(idUser, Cat.Id);
             isFavorite = f != null;
-            isLiked = f?.isLiked;
-            Style = "background-color: ";
+
+            if (isFavorite)
+                Cat.isLiked = f.isLiked;
+
+
             // If isLike is null -> color by theme default
-            // If isLike is true -> color semi-transparent green
-            // If isLike is false -> color semi-transparent red
-            Style += isLiked.HasValue ? isLiked.Value ? "rgba(0, 255, 0, 0.5)" : "rgba(255, 0, 0, 0.5)" : Color.Default;
+            // If isLike is true -> color mid-transparent green
+            // If isLike is false -> color mid-transparent red
+            Style = "background-color: ";
+            Style += Cat.isLiked != 0 ? Cat.isLiked > 0 ? "rgba(0, 255, 0, 0.5)" : "rgba(255, 0, 0, 0.5)" : Color.Default;
         }
     }
 
-    private async Task VoteCat(bool isLiked)
+    private async Task VoteCat(int isLiked)
     {
         CatService.VoteCat(Cat.Id, isLiked, idUser);
         if (NominalScenario) // Nominal scenario => After the voted it change its cat

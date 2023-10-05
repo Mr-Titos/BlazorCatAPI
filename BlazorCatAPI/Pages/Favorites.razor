@@ -20,14 +20,22 @@
     {
         cats = new List<Cat>();
         user = UserHttpContextService.GetUser();
+    }
 
-        Task<List<Favorite>> task = Task.Run<List<Favorite>>(async () => await UserService.GetFavorites(user.FindFirst(ClaimTypes.NameIdentifier).Value));
-        List<Favorite> favoritesCat = task.Result;
-        favoritesCat.ForEach(f => {
-            // Without this hack, the code will turn into an infinite loop
-            Task<Cat> task = Task.Run<Cat>(async () => await CatService.GetCat(f.ImageId));
-            cats.Add(task.Result);
-        });
-        cats = cats.OrderBy(c => c.Breeds.First().name).ToList();
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+
+        if (firstRender)
+        {
+            List<Favorite> favoritesCat = Task.Run<List<Favorite>>(async () => await UserService.GetFavorites(user.FindFirst(ClaimTypes.NameIdentifier).Value)).Result;
+            favoritesCat.ForEach(f =>
+            {
+                // Without this hack, the code will turn into an infinite loop
+                cats.Add(Task.Run<Cat>(async () => await CatService.GetCat(f.ImageId)).Result);
+            });
+            cats = cats.OrderBy(c => c.Breeds.First().name).ToList();
+            this.StateHasChanged();
+        }
     }
 }

@@ -5,7 +5,7 @@ namespace BlazorCatAPI.Modeles
     public class FavoriteResponse
     {
         [JsonProperty("id")]
-        public string Id { get; set; }
+        public string id { get; set; }
 
         [JsonProperty("message")]
         public string message { get; set; }

@@ -1,0 +1,32 @@
+﻿@page "/historic"
+@using System.Security.Claims;
+@attribute [Authorize]
+
+@inject CatService CatService
+@inject UserHttpContextService UserHttpContextService
+@inject NavigationManager NavigationManager
+
+<CatListComponent Cats="cats" Minimized="true" ReadOnly="true"></CatListComponent>
+
+@code {
+    ClaimsPrincipal user;
+
+    List<Cat> cats;
+
+    protected override void OnInitialized()
+    {
+        cats = new List<Cat>();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+        user = UserHttpContextService.GetUser();
+
+        if ((user?.Identity.IsAuthenticated ?? false) && firstRender)
+        {
+            cats.AddRange(Task.Run<List<Cat>>(async () => await CatService.GetHistoric(user.FindFirst(ClaimTypes.NameIdentifier).Value)).Result);
+            StateHasChanged();
+        }
+    }
+}
