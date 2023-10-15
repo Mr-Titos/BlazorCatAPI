@@ -61,18 +61,6 @@ if (!app.Environment.IsDevelopment())
     context.Database.EnsureDeleted();
     context.Database.EnsureCreated();
 
-    context.Users.Add(new User()
-    {
-        NameIdentifier = "117331122439535472241",
-        GivenName = "Arthur",
-        Surname = "Titos",
-        Email = "arthur.titos2@gmail.com",
-        Password = "123456789",
-        Avatar = "https://screenshots.codesandbox.io/xtpzc/605.png",
-        IsAuthenticated = false,
-        isDarkMode = true,
-    });
-
     context.SaveChanges();
 }
 

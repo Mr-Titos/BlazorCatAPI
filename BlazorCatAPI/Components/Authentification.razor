@@ -5,6 +5,7 @@
 @using Microsoft.AspNetCore.Http
 
 @inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
 @inject UserHttpContextService UserHttpContextService
 @inject IDbContextFactory<BlazorCatAPIDbContext> ContextFactory
 @inject UserService UserService
@@ -29,7 +30,7 @@
     </MudForm>
     <MudCardActions>
         <MudButton Color="Color.Secondary" Size="Size.Small" OnClick="@(() => NavigationManager.NavigateTo("/register"))">Not registered ?</MudButton>
-        <MudButton Color="Color.Secondary" Size="Size.Small" Href="/LoginGoogle">Sign in with Google</MudButton>
+        <MudButton Color="Color.Secondary" Size="Size.Small" Href="/LoginGoogle">Google Sign in</MudButton>
         <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto" OnClick="@(async () => await Submit())">Login</MudButton>
     </MudCardActions>
 </MudCard>
@@ -69,7 +70,11 @@
                 UserHttpContextService.SetUser(userState);
                 // La méthode ci-dessous est ce qui est utilisé avec une page Razor :
                 // await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(User), authProperties);
-                NavigationManager.NavigateTo("/home", true);
+
+                // Normalement on redirige en ayant connecté seulement ca ne fonctionne pas pour l'instant
+                //NavigationManager.NavigateTo("/home", true);
+                Snackbar.Add("Seulement le login par Google fonctionne actuellement");
+
             }
 
         }
